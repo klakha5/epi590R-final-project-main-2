@@ -2,10 +2,10 @@
 title: "epi590r-final-project-main-2"
 author: "Kiran Lakhani"
 format:
-  html: 
+  html:
     embed-resources: true
-    execute:
 warning: false
+
 ---
 
 ## Quarto
