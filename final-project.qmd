@@ -1,0 +1,142 @@
+---
+title: "epi590r-final-project-main-2"
+author: "Kiran Lakhani"
+format:
+  html: 
+    embed-resources: true
+    execute:
+warning: false
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r load-and-clean-data, echo=FALSE}
+# Load data using here::here
+data <- read_csv(here("data", "raw", "strep_tb.csv"))
+
+# Clean data
+modified_data <- data %>%
+  mutate(
+    baseline_condition = factor(baseline_condition, labels = c("Good", "Fair", "Poor")),
+    strep_resistance = factor(strep_resistance, labels = c("Sensitive", "Moderate", "Resistant")),
+    radiologic_6m = factor(radiologic_6m, labels = c("Death", "Considerable Deterioration", "Moderate Deterioration", "No Change", "Moderate Improvement", "Considerable Improvement")),
+    baseline_cavitation = factor(baseline_cavitation, labels = c("Yes", "No")),
+    gender = factor(gender, labels = c("Male", "Female"))
+  )
+```
+
+```{r}
+#Create summary table
+#| label: tbl-summary
+#| tbl-cap: "This is a summary table."
+tbl_summary(
+  modified_data,
+  by = gender,
+  include = c(gender, arm, dose_strep_g, baseline_cavitation,
+              improved,
+              baseline_condition, strep_resistance, rad_num),
+  label = list(
+    arm ~ "Treatment",
+    dose_strep_g ~ "Dose of Streptomycin (in grams)",
+    baseline_condition ~ "Condition at Baseline",
+    strep_resistance ~ "Resistance to Streptomycin at 6 months",
+    baseline_cavitation ~ "Cavitation of Lungs at Baseline",
+    improved ~ "Improved Outcome",
+    rad_num ~ "Rating of Chest X-Ray at 6 months"
+  ))
+```
+
+```{r}
+#Regression
+
+#| label: tbl-regression
+#| tbl-cap: "These are regression results for whether patients improved or not. Improvement is categorized as binomial therefore the glm method was used in the regression model."
+
+logistic_model <- glm(improved ~ gender*arm + baseline_condition + baseline_cavitation,
+                      data = modified_data,
+                      family = binomial ())
+
+tbl_uvregression(
+  modified_data,
+  y = improved,
+  include = c(gender, arm, dose_strep_g, baseline_cavitation,
+              baseline_condition),
+  label = list(
+    gender ~ "Gender",
+    arm ~ "Treatment",
+    dose_strep_g ~ "Dose of Streptomycin (in grams)",
+    baseline_condition ~ "Condition at Baseline",
+    baseline_cavitation ~ "Cavitation of Lungs at Baseline"
+  ),
+  method = glm,
+  method.args = list(family = binomial),
+  exponentiate = T
+)
+```
+In the figure created  below patients were categorized as "Sensitive" = 1, "Moderate" = 2, and "Resistant" = 3. 
+
+```{r}
+#Histogram
+#| label: fig-histogram
+#| fig-cap: "Histogram demonstrates Streptomycin resistance in patients"
+hist(as.numeric(modified_data$strep_resistance),
+     main = "Histogram of Streptomycin Resistance",
+     xlab = "Resistance Level",
+     breaks = 3)  # Set breaks to 3 since there are 3 levels
+```
+
+```{r}
+#Function
+new_table_function <- function(model) {
+  tbl_regression(
+    model,
+    exponentiate = T,
+    label = list(
+      gender ~ "Gender",
+      arm ~ "Treatment Group",
+      baseline_condition ~ "Condition at Baseline",
+      baseline_cavitation ~ "Cavitation of Lungs at Baseline"
+    ))
+}
+
+logistic_model <- glm(improved ~ gender*arm + baseline_condition + baseline_cavitation,
+                      data = modified_data,
+                      family = binomial ())
+
+new_table_function(logistic_model)
+```
+```{r}
+#Inline R code pulling a statistic from a table (i.e., using gtsummary::inline_text())
+
+total_sample <- nrow(modified_data)
+```
+There were `r total_sample` participants. 
+
+```{r}
+#Inline R code printing something else (like we did with the mean age in the example) (1 pt) and cross reference (1 pt)
+
+stats <- list(n = nrow(modified_data),
+              mean_rad_num = mean(modified_data$rad_num))
+```
+There were `r stats$n` participants with a mean chest x-ray rating of `r stats$mean_rad_num`.
+
+@tbl-summary is a descriptive summary table.
+
+@fig-histogram shows the distribution of streptomycin resistance.
+
+This data is a collection of patients with TB. The data summarizes their treatment history, gender, baseline characteristics such as cavitation and condition and a scale of resistance to the treatment drug streptomycin at six months. 
+
+Source: data/strep_tb.rda
+
+https://github.com/higgi13425/medicaldata/blob/a73901fefd7cf05b832c9a73663c066a5ac22f96/data/strep_tb.rda 
+
+```{r}
+project_file_path <-here("data", "raw", "epi590r_final_project.html")
+```
+
